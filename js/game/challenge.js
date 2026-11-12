@@ -7,6 +7,7 @@ import { ChallengeState } from './state.js';
 import { Camera, cameraSupport } from './camera.js';
 import { PoseRunner, FaceRunner } from './solutions.js';
 import { GameAudio } from './audio.js';
+import { MusicController } from './music.js';
 import { poseAt, drawDancer } from './dancer.js';
 import { MaskFilter } from './maskFilter.js';
 import { composePhoto, canvasToBlob, downloadBlob } from './photo.js';
@@ -23,6 +24,7 @@ export class Challenge {
     this.lowPower = (navigator.hardwareConcurrency || 4) <= 4;
     this.state = new ChallengeState(); this.score = new Score(STEPS.length);
     this.audio = new GameAudio(); this.filter = new MaskFilter();
+    this.music = new MusicController({ totalSteps: STEPS.length }); this.reflectTimers = []; this.reflecting = false;
     this.spb = 60000 / CONFIG.bpm;
     this.starts = []; let acc = 0; STEPS.forEach(s => { this.starts.push(acc); acc += s.beats; }); this.totalBeats = acc;
     this.recent = null; this.baseline = null; this.detector = null; this.idx = -1; this.awarded = false;
@@ -37,7 +39,10 @@ export class Challenge {
     this.camera = new Camera(this.video); this.camera.onended = () => this.stopCamera('La cámara se desconectó.');
     this.fx = new ConfettiCanvas($('fx'), this.reduced);
     this.head = await svgToImage(maskSVG()).catch(() => null);
-    this.buildChips(); this.bind();
+    this.music.onLevel = (lvl, gain) => this.paintMusic(lvl, gain);
+    this.music.onStatus = (st, msg) => this.onMusicStatus(st, msg);
+    this.music.onFail = () => { if (this.state.is('playing')) this.audio.start(CONFIG.bpm, Math.max(0, Math.floor(this.beat))); };
+    this.buildChips(); this.bind(); this.paintMusic(this.music.level, 0);
     this.state.on((s, p) => this.onState(s, p)); this.onState('preparing', null);
     const sup = cameraSupport();
     if (!sup.ok) { $('supportMsg').hidden = false; $('supportMsg').textContent = sup.message; $('btnCam').disabled = true; }
@@ -57,7 +62,9 @@ export class Challenge {
     $('btnToStart').onclick = () => { this.learning = false; this.state.go('preparing'); };
     $('btnStop').onclick = () => this.stopCamera('Cámara desactivada. Pulsa «Activar cámara» cuando quieras volver a bailar.');
     $('btnSwitch').onclick = () => this.switchCamera();
-    $('btnMute').onclick = e => { const m = !this.audio.muted; this.audio.setMuted(m); e.currentTarget.setAttribute('aria-pressed', m); e.currentTarget.textContent = m ? '🔇 Sin sonido' : '🔊 Sonido'; };
+    $('musicVol').oninput = e => { this.music.setUserVolume(e.target.value / 100); e.target.setAttribute('aria-valuetext', e.target.value + ' %'); };
+    $('btnIdentity').onclick = e => { const m = $('reflectMore'); m.hidden = false; requestAnimationFrame(() => m.classList.add('show')); e.currentTarget.setAttribute('aria-expanded', 'true'); e.currentTarget.disabled = true; };
+    $('btnMute').onclick = e => { const m = !this.audio.muted; this.audio.setMuted(m); this.music.setMuted(m); e.currentTarget.setAttribute('aria-pressed', m); e.currentTarget.textContent = m ? '🔇 Sin sonido' : '🔊 Sonido'; };
     $('btnPhoto').onclick = () => this.takePhoto();
     $('btnDownload').onclick = () => this.downloadPhoto();
     $('btnAgain').onclick = () => this.restart();
@@ -85,7 +92,7 @@ export class Challenge {
     $('btnPause').disabled = !this.state.is('playing', 'paused'); $('btnPause').textContent = s === 'paused' ? '▶ Reanudar' : '⏸ Pausa';
     $('btnRestart').disabled = this.state.is('preparing');
     if (s !== 'playing') $('countCard').hidden = true;
-    if (s !== 'finished') { this.fx.stop(); this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height); }
+    if (s !== 'finished') { this.stopReflection(); this.fx.stop(); this.octx.clearRect(0, 0, this.overlay.width, this.overlay.height); }
     $('btnSwitch').hidden = !(this.camera && this.camera.active && this.camera.multiple);
     $('btnStop').hidden = !(this.camera && this.camera.active);
     $('stateLabel').textContent = { preparing: 'Preparación', calibrating: 'Calibración', playing: 'En juego', paused: 'Pausa', result: 'Resultado', finished: '¡Máscara desbloqueada!' }[s];
@@ -96,7 +103,7 @@ export class Challenge {
 
   /* ---------- Cámara y modelo ---------- */
   async enableCamera() {
-    this.audio._ensure();
+    this.audio._ensure(); this.music.prime(); // se prepara dentro del gesto del usuario (sin reproducir todavía)
     $('btnCam').disabled = true; this.camStatus('Pidiendo permiso para usar la cámara…');
     try {
       const info = await this.camera.start('user');
@@ -132,14 +139,15 @@ export class Challenge {
     this.camStatus(msg || '');
   }
   releaseAll() {
-    clearTimeout(this.outTimer); this.audio.stop();
+    clearTimeout(this.outTimer); this.audio.stop(); this.stopReflection(); this.music.dispose();
     this.pose && this.pose.dispose(); this.pose = null; this.face && this.face.dispose(); this.face = null;
     this.camera && this.camera.stop();
   }
 
   /* ---------- Flujo del reto ---------- */
   begin(learning) {
-    this.learning = learning; this.score.reset(); this.idx = -1; this.detector = null; this.clockMs = 0; this.lastBeatInt = null; this.photoBlob = null;
+    if (!learning && !this.camReady) return;
+    this.learning = learning; this.stopReflection(); this.music.start(); this.score.reset(); this.idx = -1; this.detector = null; this.clockMs = 0; this.lastBeatInt = null; this.photoBlob = null;
     this.paintHud(); STEPS.forEach((_, i) => this.chip(i, ''));
     if (learning) {
       this.state.go('calibrating'); this.state.go('playing'); this.startClock();
@@ -157,10 +165,10 @@ export class Challenge {
     try { if (!this.pose || !this.pose.running) await this.ensurePose(); } catch (e) { return this.stopCamera('No se pudo reiniciar el modelo: ' + e.message); }
     this.state.value === 'preparing' ? this.begin(false) : this.begin(false);
   }
-  startClock() { this.clockMs = 0; this.beat = -CONFIG.countdownBeats; this.audio.start(CONFIG.bpm); this.lastTick = performance.now(); $('countCard').hidden = false; }
+  startClock() { this.clockMs = 0; this.beat = -CONFIG.countdownBeats; if (!this.music.wanted) this.audio.start(CONFIG.bpm); this.lastTick = performance.now(); $('countCard').hidden = false; }
   togglePause() {
-    if (this.state.is('playing')) { this.state.go('paused'); this.audio.stop(); }
-    else if (this.state.is('paused')) { this.state.go('playing'); this.lastTick = performance.now(); this.audio.start(CONFIG.bpm, Math.max(0, Math.floor(this.beat + CONFIG.countdownBeats))); }
+    if (this.state.is('playing')) { this.state.go('paused'); this.audio.stop(); this.music.pause(); }
+    else if (this.state.is('paused')) { this.state.go('playing'); this.lastTick = performance.now(); if (this.music.wanted) this.music.resume(); else this.audio.start(CONFIG.bpm, Math.max(0, Math.floor(this.beat + CONFIG.countdownBeats))); }
   }
 
   calibrate(lm, now) {
@@ -204,7 +212,7 @@ export class Challenge {
   }
   award() {
     const st = STEPS[this.idx]; const res = this.score.finishStep(st.id, this.detector.progress); if (!res) return;
-    this.awarded = true; this.chip(this.idx, 'done'); this.paintHud();
+    this.awarded = true; this.chip(this.idx, 'done'); this.paintHud(); this.music.validate(st.id); // el volumen sube solo con un paso realmente validado
     this.floater(`+${res.pts} ⭐`, 'good'); this.audio.sfx('ok'); this.fx.size(); this.fx.burst(this.lowPower ? 30 : 60);
   }
   closeStep() {
@@ -213,6 +221,7 @@ export class Challenge {
       const res = this.score.finishStep(STEPS[this.idx].id, this.detector ? this.detector.progress : 0);
       if (res) {
         this.chip(this.idx, res.grade === 'partial' ? 'partial' : res.grade === 'correct' ? 'done' : 'miss');
+        if (res.grade === 'correct') this.music.validate(STEPS[this.idx].id);
         this.floater(res.grade === 'partial' ? '+50 · casi' : res.grade === 'none' ? 'Sin reconocer' : `+${res.pts}`, res.grade === 'none' ? 'bad' : 'ok');
         this.audio.sfx(res.grade === 'partial' ? 'partial' : 'miss');
       }
@@ -246,16 +255,16 @@ export class Challenge {
   finishGame() {
     this.closeStep(); this.audio.stop(); this.idx = -1; this.detector = null;
     this.state.go('result');
-    if (this.learning) { $('resTitle').textContent = '¡Terminaste el recorrido!'; $('resText').textContent = 'Este fue el modo aprendizaje: no se evaluaron tus movimientos ni se otorgaron puntos. Activa la cámara para jugar de verdad y desbloquear tu máscara.'; $('resStats').hidden = true; $('btnRetry').hidden = false; $('btnRetry').textContent = 'Repetir el tutorial'; return; }
+    if (this.learning) { this.music.fadeOut(2.2); $('resTitle').textContent = '¡Terminaste el recorrido!'; $('resText').textContent = 'Este fue el modo aprendizaje: no se evaluaron tus movimientos ni se otorgaron puntos. Activa la cámara para jugar de verdad y desbloquear tu máscara.'; $('resStats').hidden = true; $('btnRetry').hidden = false; $('btnRetry').textContent = 'Repetir el tutorial'; return; }
     $('resStats').hidden = false; const pts = this.score.finalize(); this.paintHud();
     $('resPoints').textContent = pts; $('resAcc').textContent = this.score.accuracy + '%'; $('resSteps').textContent = `${this.score.validated} de ${STEPS.length}`;
     $('resList').innerHTML = this.score.results.map(r => `<li class="${r.grade}"><span>${STEPS.find(s => s.id === r.id).name}</span><b>${r.pts ? '+' + r.pts : '0'}</b></li>`).join('');
     if (this.score.passed) {
       $('resTitle').textContent = '¡Reto completado!'; $('resText').textContent = `Validaste ${this.score.validated} movimientos (se necesitaban ${CONFIG.minValidatedSteps}). Bonificación de secuencia: +${this.score.bonus}. ¡Prepárate para tu máscara!`;
-      this.audio.sfx('win'); this.fx.size(); this.fx.burst(120); $('btnRetry').hidden = true;
+      this.music.complete(); this.audio.sfx('win'); this.fx.size(); this.fx.burst(120); $('btnRetry').hidden = true;
       setTimeout(() => this.unlock(), 2800);
     } else {
-      $('resTitle').textContent = '¡Casi lo logras!'; $('resText').textContent = `Validaste ${this.score.validated} movimientos y se necesitan ${CONFIG.minValidatedSteps} para desbloquear la máscara. ¡Inténtalo otra vez, marimondero!`; $('btnRetry').hidden = false; $('btnRetry').textContent = 'Intentar de nuevo';
+      $('resTitle').textContent = '¡Casi lo logras!'; $('resText').textContent = `Validaste ${this.score.validated} movimientos y se necesitan ${CONFIG.minValidatedSteps} para desbloquear la máscara. ¡Inténtalo otra vez, marimondero!`; $('btnRetry').hidden = false; $('btnRetry').textContent = 'Intentar de nuevo'; this.music.fadeOut(2.2);
     }
   }
 
@@ -272,9 +281,36 @@ export class Challenge {
       this.face.mirrored = this.camera.mirrored; await this.face.init();
       this.filter.onMouthOpen = () => this.audio.pito();
       this.face.start(this.video, lm => this.onFace(lm, false));
+      this.reflectTimers.push(setTimeout(() => this.startReflection(), CONFIG.reflection.celebrateMs));
       $('faceStatus').textContent = 'Mírate a la cámara: abre la boca para hacer sonar el pito 🎺';
     } catch (e) { console.error(e); $('faceStatus').textContent = 'No se pudo iniciar el seguimiento facial: ' + e.message; }
   }
+  /* ---------- Cierre reflexivo: la música baja, el fondo se oscurece y aparece la pregunta ---------- */
+  startReflection() {
+    if (!this.state.is('finished') || this.reflecting) return; this.reflecting = true;
+    const R = CONFIG.reflection, later = (ms, fn) => this.reflectTimers.push(setTimeout(fn, ms));
+    this.fx.setRain(false); this.music.fadeOut(CONFIG.music.fadeOutSec); $('musicInfo').textContent = '🎵 La música se desvanece para dejar espacio a la pregunta.';
+    $('baila').classList.add('reflecting'); $('reflect').hidden = false;
+    later(R.introDelayMs, () => { $('reflectIntro').classList.add('show'); this.revealReflection(); });
+    later(R.questionDelayMs, () => $('reflectQ').classList.add('show'));
+    later(R.actionsDelayMs, () => { $('reflectActions').classList.add('show'); $('btnAgain').focus({ preventScroll: true }); });
+  }
+  /** Desplaza lo justo para ver la pregunta sin sacar de cuadro el rostro con la máscara. */
+  revealReflection() {
+    const r = $('reflect').getBoundingClientRect(), c = $('cam').getBoundingClientRect(), need = r.bottom - innerHeight + 16, room = c.top - 70;
+    if (need > 0 && room > 0) scrollBy({ top: Math.min(need, room), behavior: this.reduced ? 'auto' : 'smooth' });
+  }
+  stopReflection() {
+    this.reflectTimers.forEach(clearTimeout); this.reflectTimers = []; this.reflecting = false;
+    const sec = $('baila'); if (!sec) return; sec.classList.remove('reflecting'); $('reflect').hidden = true;
+    ['reflectIntro', 'reflectQ', 'reflectActions', 'reflectMore'].forEach(id => $(id).classList.remove('show')); $('reflectMore').hidden = true;
+    $('btnIdentity').disabled = false; $('btnIdentity').setAttribute('aria-expanded', 'false');
+  }
+  paintMusic(level) {
+    const el = $('musicInfo'); if (!el) return;
+    el.textContent = this.music.status === 'error' ? '🎵 Sin la canción: suena el ritmo de respaldo.' : `🎵 Música al ${Math.round(level * 100)} % · sube con cada paso correcto`;
+  }
+  onMusicStatus(st, msg) { const el = $('musicInfo'); if (st === 'error' && el) el.textContent = '🎵 ' + (msg || 'La canción no está disponible.') + ' Suena el ritmo de respaldo.'; }
   onFace(lm, fromHook = false) {
     if (TEST && !fromHook) return; if (!this.state.is('finished')) return;
     this.faceLm = lm; this.faceAt = performance.now();

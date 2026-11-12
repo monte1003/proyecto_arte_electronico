@@ -15,4 +15,16 @@ export const CONFIG = {
   mouthOpenRatio: 0.05,     // apertura de boca / alto del rostro para activar el pito
   faceLostMs: 500,          // sin rostro durante este tiempo → ocultar filtro
   outOfViewStopMs: 10000,   // sección fuera de pantalla → apagar cámara
+  // Música ambiental (cancion.mp3): el volumen sube SOLO cuando se valida un paso nuevo.
+  music: {
+    src: 'assets/audio/cancion.mp3',
+    start: 0.10,                              // volumen inicial (10 %)
+    levels: [0.20, 0.35, 0.50, 0.65, 0.75],   // volumen tras el 1.º, 2.º… paso correcto (uno por paso del reto)
+    hardMax: 0.85,                            // tope absoluto: nunca llega al 100 %
+    fadeInSec: 1.5,                           // entrada suave al empezar
+    riseSec: 1.4,                             // transición entre niveles
+    fadeOutSec: 3.5,                          // bajada final antes del cierre reflexivo
+  },
+  // Tiempos del cierre reflexivo (ms, contados desde que se desbloquea la máscara).
+  reflection: { celebrateMs: 4500, introDelayMs: 1000, questionDelayMs: 4200, actionsDelayMs: 7200 },
 };

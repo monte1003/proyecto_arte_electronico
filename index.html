@@ -114,10 +114,18 @@
                     <div class="btn-row">
                       <button class="btn btn-primary" id="btnPhoto" type="button">📸 Tomar foto</button>
                       <button class="btn btn-hot" id="btnDownload" type="button" disabled>⬇ Descargar mi foto</button>
-                      <button class="btn btn-ghost" id="btnAgain" type="button">💃 Volver a bailar</button>
                       <button class="btn btn-ghost" id="btnHome" type="button">🏠 Regresar al inicio</button>
                     </div>
                   </div>
+              <section class="reflect" id="reflect" hidden aria-label="Reflexión final">
+                <p class="reflect-intro" id="reflectIntro">Bailamos al mismo ritmo. Llevamos la misma máscara. Pero ¿seguimos siendo nosotros mismos?</p>
+                <p class="reflect-q" id="reflectQ" role="heading" aria-level="3">¿La máscara de la Marimonda celebra nuestra identidad o, bajo la idea de hacernos iguales, termina ocultando aquello que nos hace únicos?</p>
+                <div class="reflect-actions" id="reflectActions">
+                  <button class="btn btn-primary" id="btnAgain" type="button">💃 Volver a bailar</button>
+                  <button class="btn btn-ghost" id="btnIdentity" type="button" aria-expanded="false" aria-controls="reflectMore">Descubrir mi identidad</button>
+                </div>
+                <p class="reflect-more" id="reflectMore" hidden role="status">Una máscara puede unirnos en una misma tradición, pero cada persona lleva consigo una historia, unos movimientos y una identidad que no pueden repetirse.</p>
+              </section>
               <figure class="photo-prev" id="photoWrap" hidden><img id="photoPrev" alt="Tu foto con la máscara de la Marimonda"><figcaption>Tu foto (solo en tu dispositivo)</figcaption></figure>
             </section>
           </div>
@@ -130,6 +138,7 @@
             <div class="hud-prog">
               <div class="bar" id="progWrap" role="progressbar" aria-label="Progreso del reto" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progBar"></i></div>
               <p id="nextText">Siguiente: ¡Arriba esos brazos!</p>
+              <p class="music-info" id="musicInfo" role="status" aria-live="off">🎵 Música: empieza al 10 % y sube con tus aciertos</p>
             </div>
             <div class="controls">
               <button class="btn btn-sm" id="btnPause" type="button" disabled>⏸ Pausa</button>
@@ -137,10 +146,11 @@
               <button class="btn btn-sm" id="btnSwitch" type="button" hidden>🔄 Cambiar cámara</button>
               <button class="btn btn-sm" id="btnStop" type="button" hidden>⏹ Apagar cámara</button>
               <button class="btn btn-sm" id="btnMute" type="button" aria-pressed="false">🔊 Sonido</button>
+              <label class="vol" for="musicVol">Volumen <input id="musicVol" type="range" min="0" max="100" value="100" aria-valuetext="100 %"></label>
             </div>
           </div>
         </div>
-        <p class="fine">Los puntos solo se otorgan por movimientos realmente detectados con tu cuerpo (brazos, hombros, desplazamiento y rebote). Si te quedas quieto, no suma. La música del reto es un ritmo sintético original.</p>
+        <p class="fine">Los puntos solo se otorgan por movimientos realmente detectados con tu cuerpo (brazos, hombros, desplazamiento y rebote). Si te quedas quieto, no suma. La música ambiental es la canción del proyecto: empieza baja y sube solo cuando validas un paso con tu cuerpo. Si no logra cargar, el juego usa un ritmo sintético original.</p>
       </div>
     </section>
 
