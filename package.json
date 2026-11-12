@@ -1,0 +1,19 @@
+{
+  "name": "mascara-de-la-marimonda",
+  "version": "2.0.0",
+  "private": true,
+  "type": "commonjs",
+  "description": "Sitio interactivo «La Máscara de la Marimonda»: reto de baile con MediaPipe Pose y filtro AR con Face Mesh",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js",
+    "build": "node scripts/build.js",
+    "vendor": "node scripts/copy-vendor.js",
+    "postinstall": "node scripts/copy-vendor.js",
+    "test": "node --input-type=module -e \"await import('./test/logic.test.mjs')\""
+  },
+  "dependencies": {
+    "@mediapipe/face_mesh": "^0.4.1633559619",
+    "@mediapipe/pose": "^0.5.1675469404"
+  }
+}

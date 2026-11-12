@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>La Máscara de la Marimonda · ¡Baila y desbloquea tu máscara!</title>
+  <meta name="description" content="Proyecto colectivo sobre la máscara de la Marimonda del Carnaval de Barranquilla, con un reto de baile por cámara y un filtro de realidad aumentada.">
+  <meta name="theme-color" content="#1b0a3a">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎭%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <a class="skip" href="#contenido">Saltar al contenido</a>
+
+  <header class="topbar">
+    <a class="brand" href="#inicio" aria-label="La Máscara de la Marimonda, ir al inicio"><span class="brand-dot" aria-hidden="true"></span> Marimonda</a>
+    <button class="burger" id="burger" aria-expanded="false" aria-controls="menu" aria-label="Abrir menú"><span></span><span></span><span></span></button>
+    <nav id="menu" class="menu" aria-label="Principal">
+      <a href="#baila" class="menu-hot">¡Baila!</a>
+      <a href="#proyecto">Proyecto</a>
+      <a href="#historia">Historia</a>
+      <a href="#valor">Valor</a>
+      <a href="#tema">Tema</a>
+      <a href="#propuesta">Propuesta</a>
+      <a href="#galeria">Galería</a>
+      <a href="#repositorio">Fuentes</a>
+    </nav>
+  </header>
+
+  <main id="contenido">
+    <!-- INICIO -->
+    <section class="hero" id="inicio" data-section>
+      <div class="confetti" id="confetti" aria-hidden="true"></div>
+      <svg class="serp serp-a" viewBox="0 0 400 800" aria-hidden="true" preserveAspectRatio="none"><path d="M60 0 C 160 80, -40 140, 80 220 S 180 340, 40 420 S -20 560, 90 640 S 160 740, 60 800"/></svg>
+      <svg class="serp serp-b" viewBox="0 0 400 800" aria-hidden="true" preserveAspectRatio="none"><path d="M340 0 C 240 90, 420 150, 300 240 S 220 360, 360 440 S 420 580, 310 660 S 240 760, 340 800"/></svg>
+      <div class="hero-inner">
+        <div class="hero-text">
+          <p class="eyebrow">Carnaval de Barranquilla · Patrimonio Oral e Inmaterial</p>
+          <h1 class="mega"><span>La máscara</span> <span class="small">de la</span> <span class="yel">Marimonda</span></h1>
+          <p class="lead">La sátira popular que convirtió unos costales de fique en una de las figuras más queridas del Carnaval. Ahora, ¡te toca bailarla!</p>
+          <div class="cta-row">
+            <a class="btn btn-primary" href="#proyecto">Descubre el proyecto</a>
+            <a class="btn btn-hot" href="#baila">💃 ¡Baila y gana tu máscara!</a>
+          </div>
+        </div>
+        <div class="hero-art" id="heroMask" role="img" aria-label="Ilustración de la máscara de la Marimonda con orejas grandes y nariz larga"></div>
+      </div>
+      <a class="scroll-hint" href="#baila" aria-label="Ir al reto de baile">↓</a>
+    </section>
+
+    <!-- RETO DE BAILE -->
+    <section class="section stage-sec" id="baila" data-section>
+      <div class="wrap">
+        <p class="kicker">Carnaval interactivo — Reto Marimonda</p>
+        <h2 class="mega">¡Baila como una <span class="yel">Marimonda</span>!</h2>
+        <p class="intro light-text">Sigue los pasos, demuestra tu ritmo y desbloquea tu máscara carnavalera. Tu cámara se procesa <strong>solo en tu navegador</strong>: nada se graba ni se envía.</p>
+
+        <div class="game" id="game" data-state="preparing">
+          <ol class="chips" id="stepChips" aria-label="Pasos del reto"></ol>
+
+          <div class="panels">
+            <!-- Panel izquierdo: tutorial -->
+            <section class="panel tutorial" aria-labelledby="tutTitle">
+              <h3 id="tutTitle">Tutorial · sigue al bailarín</h3>
+              <div class="tut-wrap"><canvas id="tutCanvas" role="img" aria-label="Bailarín animado que demuestra el paso actual"></canvas>
+                <div class="timer" aria-live="off"><small>Tiempo del paso</small><b id="timerVal">—</b></div>
+              </div>
+              <div class="beat-bar" id="beatBar" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+              <p class="step-name" id="stepName">Mira el tutorial</p>
+              <p class="step-cue" id="stepCue">Pulsa «Activar cámara» para jugar, o prueba el modo aprendizaje.</p>
+              <div class="bar small"><i id="stepProg"></i></div>
+            </section>
+
+            <!-- Panel derecho: usuario -->
+            <section class="panel user" aria-labelledby="usrTitle">
+              <h3 id="usrTitle">Tú · imagen en vivo <span class="state-pill" id="stateLabel">Preparación</span></h3>
+              <div class="cam-wrap">
+                <div class="cam" id="cam">
+                  <video id="video" playsinline muted aria-label="Vista en vivo de tu cámara"></video>
+                  <canvas id="overlay" aria-hidden="true"></canvas>
+                  <canvas id="fx" aria-hidden="true"></canvas>
+                  <div class="hint" id="hint" role="status" aria-live="polite"></div>
+                  <div class="floaters" id="floaters" aria-hidden="true"></div>
+
+                  <div class="card-ov" id="startCard">
+                    <div class="cam-ph" aria-hidden="true">🎥</div>
+                    <p id="camStatus" class="status">Activa tu cámara para que detectemos tus movimientos con visión artificial.</p>
+                    <p id="supportMsg" class="status warn" hidden></p>
+                    <div class="btn-col">
+                      <button class="btn btn-primary" id="btnCam" type="button">Activar cámara</button>
+                      <button class="btn btn-primary" id="btnBegin" type="button" hidden>¡Empezar reto!</button>
+                      <button class="btn btn-ghost" id="btnLearn" type="button">Modo aprendizaje (sin cámara)</button>
+                    </div>
+                    <small class="privacy">🔒 Se pide tu permiso. El video no sale de tu dispositivo.</small>
+                  </div>
+                  <div class="card-ov" id="calCard" hidden>
+                    <h4>Calibrando…</h4><p id="calText">Párate frente a la cámara.</p>
+                    <div class="bar"><i id="calBar"></i></div>
+                  </div>
+                  <div class="card-ov clear" id="countCard" hidden><span class="count" id="countNum">Prepárate</span></div>
+                  <div class="card-ov" id="pauseCard" hidden><h4>⏸ Pausa</h4><button class="btn btn-primary" id="btnResume" type="button">▶ Reanudar</button></div>
+                  <div class="card-ov scroll" id="resultCard" hidden>
+                    <h4 id="resTitle">Resultado</h4><p id="resText"></p>
+                    <div class="res-stats" id="resStats"><div><b id="resPoints">0</b><small>puntos</small></div><div><b id="resAcc">0%</b><small>precisión</small></div><div><b id="resSteps">0</b><small>pasos correctos</small></div></div>
+                    <ul class="res-list" id="resList"></ul>
+                    <div class="btn-col"><button class="btn btn-primary" id="btnRetry" type="button">Intentar de nuevo</button><button class="btn btn-ghost" id="btnToStart" type="button">Volver al inicio del reto</button></div>
+                  </div>
+                </div>
+              </div>
+              <div class="celebrate" id="celebrate" hidden>
+                    <p class="win-msg">¡LO LOGRASTE! YA ERES UNA VERDADERA MARIMONDA</p>
+                    <p class="win-pts">Puntuación final: <b id="winPts">0</b></p>
+                    <p class="status" id="faceStatus" role="status" aria-live="polite">Cargando seguimiento facial…</p>
+                    <div class="btn-row">
+                      <button class="btn btn-primary" id="btnPhoto" type="button">📸 Tomar foto</button>
+                      <button class="btn btn-hot" id="btnDownload" type="button" disabled>⬇ Descargar mi foto</button>
+                      <button class="btn btn-ghost" id="btnAgain" type="button">💃 Volver a bailar</button>
+                      <button class="btn btn-ghost" id="btnHome" type="button">🏠 Regresar al inicio</button>
+                    </div>
+                  </div>
+              <figure class="photo-prev" id="photoWrap" hidden><img id="photoPrev" alt="Tu foto con la máscara de la Marimonda"><figcaption>Tu foto (solo en tu dispositivo)</figcaption></figure>
+            </section>
+          </div>
+
+          <!-- Zona inferior -->
+          <div class="hud" role="group" aria-label="Marcador y controles">
+            <div class="stat"><small>Puntos</small><b id="score">0</b></div>
+            <div class="stat"><small>Precisión</small><b id="acc">0%</b></div>
+            <div class="stat"><small>Pasos correctos</small><b id="validated">0/3 necesarios</b></div>
+            <div class="hud-prog">
+              <div class="bar" id="progWrap" role="progressbar" aria-label="Progreso del reto" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><i id="progBar"></i></div>
+              <p id="nextText">Siguiente: ¡Arriba esos brazos!</p>
+            </div>
+            <div class="controls">
+              <button class="btn btn-sm" id="btnPause" type="button" disabled>⏸ Pausa</button>
+              <button class="btn btn-sm" id="btnRestart" type="button" disabled>↺ Reiniciar</button>
+              <button class="btn btn-sm" id="btnSwitch" type="button" hidden>🔄 Cambiar cámara</button>
+              <button class="btn btn-sm" id="btnStop" type="button" hidden>⏹ Apagar cámara</button>
+              <button class="btn btn-sm" id="btnMute" type="button" aria-pressed="false">🔊 Sonido</button>
+            </div>
+          </div>
+        </div>
+        <p class="fine">Los puntos solo se otorgan por movimientos realmente detectados con tu cuerpo (brazos, hombros, desplazamiento y rebote). Si te quedas quieto, no suma. La música del reto es un ritmo sintético original.</p>
+      </div>
+    </section>
+
+    <!-- SOBRE EL PROYECTO -->
+    <section class="section s-yellow" id="proyecto" data-section>
+      <div class="wrap">
+        <p class="kicker k-ink">Avance proyecto colectivo</p>
+        <h2 class="mega-sm reveal">Sobre el proyecto</h2>
+        <p class="intro reveal">Obra material elegida: la <strong>máscara de la Marimonda</strong>. El proyecto analiza la obra desde tres miradas y la lleva a las artes electrónicas.</p>
+        <div class="cards3">
+          <article class="sticker c-pink reveal"><span class="ico" aria-hidden="true">🔎</span><h3>Experto</h3><p>¿Cuál es el valor de la obra? Valor histórico, simbólico y artesanal.</p><a href="#valor">Ver valor →</a></article>
+          <article class="sticker c-blue reveal"><span class="ico" aria-hidden="true">🖼️</span><h3>Curador</h3><p>¿Cuál es el tema que aborda la obra? La sátira popular y la deconstrucción del poder.</p><a href="#tema">Ver tema →</a></article>
+          <article class="sticker c-green reveal"><span class="ico" aria-hidden="true">💻</span><h3>Diseñador</h3><p>¿Cómo se representa a través de las artes electrónicas? Un sistema interactivo con cámara.</p><a href="#propuesta">Ver propuesta →</a></article>
+        </div>
+        <p class="team sticker reveal"><strong>Grupo conformado por:</strong> Isac Monterrosa, Oscar Velez, Juliana Martelo y Gabriela Pineda.</p>
+      </div>
+    </section>
+
+    <!-- HISTORIA -->
+    <section class="section s-blue" id="historia" data-section>
+      <div class="wrap">
+        <p class="kicker">Descripción histórica de la obra</p>
+        <h2 class="mega-sm reveal">Historia y tradición</h2>
+        <p class="intro reveal">Toca cada momento para descubrir cómo nació y cómo evolucionó la Marimonda.</p>
+        <ol class="timeline" id="timeline">
+          <li class="tl-item reveal"><button class="tl-btn" aria-expanded="false" aria-controls="tl1"><span class="tl-n">1</span><span>Finales del siglo XIX</span></button><div class="tl-body" id="tl1" hidden>Nació a finales del siglo XIX en Barranquilla como una expresión pura de sátira social y burla al elitismo de la época.</div></li>
+          <li class="tl-item reveal"><button class="tl-btn" aria-expanded="false" aria-controls="tl2"><span class="tl-n">2</span><span>Un disfraz sin recursos</span></button><div class="tl-body" id="tl2" hidden>Un habitante de clase popular, al no contar con los recursos para comprar disfraces costosos, confeccionó una máscara grotesca usando sacos viejos de tela (costales de fique), pantalones y chaquetas al revés o rotas, combinados con una larga nariz fálica y orejas gigantescas que imitaban las de un elefante o un primate.</div></li>
+          <li class="tl-item reveal"><button class="tl-btn" aria-expanded="false" aria-controls="tl3"><span class="tl-n">3</span><span>Un personaje irreverente</span></button><div class="tl-body" id="tl3" hidden>Este personaje, alegre, irreverente y extravagante, buscaba parodiar a los políticos, la aristocracia y la burocracia local con movimientos cómicos y sonidos agudos producidos por un pito de millo o «pito de agua».</div></li>
+          <li class="tl-item reveal"><button class="tl-btn" aria-expanded="false" aria-controls="tl4"><span class="tl-n">4</span><span>Con el paso de los años</span></button><div class="tl-body" id="tl4" hidden>El disfraz evolucionó hacia colores vivos y llamativos, convirtiéndose en una de las figuras más emblemáticas y queridas del Patrimonio Oral e Inmaterial del Carnaval de Barranquilla.</div></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- VALOR -->
+    <section class="section s-cream" id="valor" data-section>
+      <div class="wrap">
+        <p class="kicker">Experto</p>
+        <h2 class="mega-sm reveal">¿Cuál es el valor de la obra?</h2>
+        <div class="cards3">
+          <article class="flip reveal" tabindex="0" role="button" aria-pressed="false" aria-label="Valor histórico y social. Presiona para ver el detalle"><div class="flip-in"><div class="face front c-pink"><span class="ico" aria-hidden="true">📜</span><h3>Valor histórico y social</h3><small>Toca para ver más</small></div><div class="face back"><p>Nació a finales del siglo XIX como un acto de protesta, resistencia y sátira popular de la clase trabajadora frente a la aristocracia y la burocracia de Barranquilla.</p></div></div></article>
+          <article class="flip reveal" tabindex="0" role="button" aria-pressed="false" aria-label="Valor simbólico y de identidad cultural. Presiona para ver el detalle"><div class="flip-in"><div class="face front c-purple"><span class="ico" aria-hidden="true">🎭</span><h3>Valor simbólico y de identidad cultural</h3><small>Toca para ver más</small></div><div class="face back"><p>Es la personificación de la irreverencia, la picardía (la «mamadera de gallo») y la alegría festiva del habitante del Caribe colombiano. Es un pilar fundamental en la declaratoria del Carnaval de Barranquilla como Patrimonio Cultural Inmaterial de la Humanidad (UNESCO).</p></div></div></article>
+          <article class="flip reveal" tabindex="0" role="button" aria-pressed="false" aria-label="Valor artesanal y estético. Presiona para ver el detalle"><div class="flip-in"><div class="face front c-orange"><span class="ico" aria-hidden="true">🧵</span><h3>Valor artesanal y estético</h3><small>Toca para ver más</small></div><div class="face back"><p>Representa la creatividad del reciclaje popular (uso original de sacos de fique, ropa al revés y la confección de orejas y nariz fálica) evolucionada hacia un ícono de diseño gráfico y textil carnavalesco.</p></div></div></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- TEMA -->
+    <section class="section s-purple" id="tema" data-section>
+      <div class="wrap">
+        <p class="kicker">Curador</p>
+        <h2 class="mega-sm reveal">¿Cuál es el tema que aborda la obra?</h2>
+        <blockquote class="central reveal"><span>Tema central</span>«La Sátira Popular y la Deconstrucción del Poder a través de la Máscara.»</blockquote>
+        <h3 class="sub reveal">Subtemas de comunicación</h3>
+        <div class="acc">
+          <details class="reveal" name="sub"><summary>Anatomía de la burla</summary><p>La exageración de los rasgos (orejas gigantes, nariz fálica, corbata) como herramienta para ridiculizar al político y a la élite.</p></details>
+          <details class="reveal" name="sub"><summary>Paisaje sonoro y corporal</summary><p>La sonoridad estridente del pito pea-pea combinada con la gestualidad y los pasos desordenados como expresión de libertad colectiva.</p></details>
+          <details class="reveal" name="sub"><summary>De la marginación a la dignificación</summary><p>La evolución histórica de un disfraz rechazado en el siglo XIX a la comparsa masiva de las Marimondas del Barrio Abajo.</p></details>
+        </div>
+      </div>
+    </section>
+
+    <!-- PROPUESTA -->
+    <section class="section s-green" id="propuesta" data-section>
+      <div class="wrap">
+        <p class="kicker k-ink">Diseñador</p>
+        <h2 class="mega-sm reveal">¿Cómo se representa en las artes electrónicas?</h2>
+        <p class="intro reveal"><strong>Propuesta de sistema interactivo:</strong> una experiencia con webcam o la cámara del celular y un navegador web, dividida en dos componentes sencillos.</p>
+        <div class="duo">
+          <article class="sticker reveal"><h3><span class="pill pink">1</span> Reconocimiento facial y deformación sensorial (filtro AR)</h3>
+            <p>Mediante bibliotecas gratuitas de código abierto (como MediaPipe o p5.js), el sistema detecta el rostro del usuario y le superpone una versión digital interactiva de la máscara de la Marimonda. Al abrir la boca, el sistema reproduce el sonido característico del pito pea-pea y mueve dinámicamente las orejas y la nariz de la máscara.</p>
+            <p class="done">✅ Ya funciona: al completar el reto se desbloquea el filtro con MediaPipe Face Mesh; abre la boca y suena el pito.</p></article>
+          <article class="sticker reveal"><h3><span class="pill blue">2</span> Medidor de «Gozadera» (minijuego de movimiento)</h3>
+            <p>Usando detección de pose básica (PoseNet), la pantalla le pide al usuario realizar los movimientos o brincos típicos de la Marimonda. A mayor movimiento y gestos, la interfaz gráfica genera ráfagas de color y patrones festivos generativos en el fondo de la pantalla.</p>
+            <p class="done">✅ Ya funciona: el Reto Marimonda detecta tu cuerpo con MediaPipe Pose (sucesor de PoseNet) y lanza ráfagas de confeti según tus movimientos.</p></article>
+        </div>
+        <p class="center reveal"><a class="btn btn-primary" href="#baila">💃 Probar el reto</a></p>
+      </div>
+    </section>
+
+    <!-- GALERÍA -->
+    <section class="section s-orange" id="galeria" data-section>
+      <div class="wrap">
+        <p class="kicker k-ink">Anatomía de la burla</p>
+        <h2 class="mega-sm reveal">Galería visual</h2>
+        <p class="intro reveal">Ilustraciones originales de los elementos de la máscara que describe el documento. Toca una para ampliarla.</p>
+        <div class="gallery" id="gallery"></div>
+      </div>
+    </section>
+
+    <!-- REPOSITORIO -->
+    <section class="section s-cream" id="repositorio" data-section>
+      <div class="wrap">
+        <p class="kicker">Repositorio online</p>
+        <h2 class="mega-sm reveal">Fuentes y referencias</h2>
+        <p class="intro reveal">Material de consulta del proyecto. Los enlaces se abren en una pestaña nueva.</p>
+        <ul class="repo">
+          <li class="reveal"><span>Fotografía de la obra</span><a target="_blank" rel="noopener noreferrer" href="https://colombiavisible.com/wp-content/uploads/2022/03/marimondas-carnaval-bestiario-barranquilla-1024x576.jpeg">Fotografía de la obra ↗</a></li>
+          <li class="reveal"><span>Fotografía histórica</span><a target="_blank" rel="noopener noreferrer" href="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSp2ZYVjIwcONh2HBLoLPk8Ss80awttwOe9E-nyYsE0mRNVrtdObI2VYP0&s=10">Fotografía histórica ↗</a></li>
+          <li class="reveal"><span>Máscara</span><a target="_blank" rel="noopener noreferrer" href="https://i.pinimg.com/736x/4e/81/53/4e81536fb741b0ac7de6ad507744c004.jpg">Máscara ↗</a></li>
+          <li class="reveal"><span>Descripción simbólica</span><a target="_blank" rel="noopener noreferrer" href="https://www.senalmemoria.co/piezas/la-marimonda-simbologia">¿Qué simboliza la marimonda? ↗</a></li>
+          <li class="reveal"><span>Historia de la obra</span><a target="_blank" rel="noopener noreferrer" href="https://colombiavisible.com/marimondas-de-barrio-abajo-la-historia-detras-del-icono-de-toda-una-comunidad-en-barranquilla/">Historia de la marimonda ↗</a></li>
+          <li class="reveal"><span>Reportaje de la obra</span><a target="_blank" rel="noopener noreferrer" href="https://zonacero.com/sociales/paraguita-una-leyenda-del-carnaval-que-barranquilla-tiene-prohibido-olvidar">Reportaje: líder de las marimondas de Barrio Abajo ↗</a></li>
+          <li class="reveal"><span>Información general</span><a target="_blank" rel="noopener noreferrer" href="https://es.wikipedia.org/wiki/Marimonda">Marimonda – Wikipedia ↗</a></li>
+          <li class="reveal"><span>Obras de inspiración</span><span class="two"><a target="_blank" rel="noopener noreferrer" href="https://umbrellium.co.uk/projects/assemblance/">Obra de inspiración 1 ↗</a><a target="_blank" rel="noopener noreferrer" href="https://developers.googleblog.com/bringing-artworks-to-life-with-ar/">Obra de inspiración 2 ↗</a></span></li>
+          <li class="reveal"><span>Video de la obra</span><a target="_blank" rel="noopener noreferrer" href="https://www.youtube.com/watch?v=7LGc_4BFk1k">Video de la obra ↗</a></li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- CIERRE -->
+    <section class="closing" id="cierre" data-section>
+      <div class="wrap">
+        <div class="closing-art" id="closingMask" aria-hidden="true"></div>
+        <h2 class="mega reveal">¡Que viva la Marimonda!</h2>
+        <p class="reveal">De los costales de fique del siglo XIX a un ícono del Carnaval: la burla, la picardía y la alegría del Caribe colombiano, ahora también en tu pantalla.</p>
+        <p class="reveal"><a class="btn btn-hot" href="#baila">💃 ¡Volver a bailar!</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <p><strong>Avance proyecto colectivo</strong></p>
+    <p>Isac Monterrosa · Oscar Velez · Juliana Martelo · Gabriela Pineda</p>
+  </footer>
+
+  <button class="totop" id="toTop" aria-label="Volver al inicio" hidden>↑</button>
+
+  <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Imagen ampliada" hidden>
+    <button class="lb-close" id="lbClose" aria-label="Cerrar">✕</button>
+    <button class="lb-nav lb-prev" id="lbPrev" aria-label="Anterior">‹</button>
+    <figure><div id="lbArt"></div><figcaption id="lbCap"></figcaption></figure>
+    <button class="lb-nav lb-next" id="lbNext" aria-label="Siguiente">›</button>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
