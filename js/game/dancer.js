@@ -15,7 +15,15 @@ export function poseAt(stepId, b) {
   const lados = bb => { const x = Math.sin(TAU * bb / 4); p.cx = 0.13 * x; p.lean = 8 * x; p.arm = [95 + 14 * x, 150 + 18 * x]; p.legSpread = 0.1; };
   const hombros = bb => { const s = Math.sin(TAU * bb); p.shTilt = 15 * s; p.arm = [28 - 6 * s, 78 - 10 * s]; };
   const salto = bb => { const j = Math.abs(Math.sin(Math.PI * bb)); p.cy = -0.1 * j; p.bend = 1 - j; p.arm = [58 + 28 * j, 100 + 40 * j]; p.legSpread = 0.1 + 0.05 * (1 - j); };
+  const pito = bb => { const k = Math.max(0, Math.sin(TAU * bb / 2)); p.arm = [25, 150 + 25 * k]; };
+  const suelo = bb => { const d = 0.5 - 0.5 * Math.cos(TAU * bb / 4); p.cy = 0.1 * d; p.bend = d * 4; p.legSpread = 0.1 + 0.05 * d; p.lean = 6 * d; p.arm = [35 + 20 * d, 45 + 30 * d]; };
+  const gallina = bb => { const s = Math.sin(TAU * bb * 2); p.arm = [75 + 25 * s, 75 + 25 * s]; p.cy = -bounce * 2; };
+  const hormigas = bb => { const s = Math.sin(TAU * bb * 4), s2 = Math.sin(TAU * bb * 4 + 1.7); p.cx = 0.02 * s; p.shTilt = 6 * s2; p.bend = 0.5 + 0.5 * s2; p.arm = [35 + 18 * s2, 60 + 25 * s]; p.legSpread = 0.08; };
   if (stepId === 'brazos') brazos(b);
+  else if (stepId === 'pito') pito(b);
+  else if (stepId === 'suelo') suelo(b);
+  else if (stepId === 'gallina') gallina(b);
+  else if (stepId === 'hormigas') hormigas(b);
   else if (stepId === 'lados') lados(b);
   else if (stepId === 'hombros') hombros(b);
   else if (stepId === 'salto') salto(b);

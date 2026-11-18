@@ -7,12 +7,13 @@ import { levelForCount, effectiveGain, MusicProgress, MusicController } from '..
 
 const base = { x: 0.5, y: 0.4, w: 0.2 };
 // Persona sintética (espacio pantalla). opts: dx, dy, tilt, arms (altura de manos en anchos de hombro)
-function person({ dx = 0, dy = 0, tilt = 0, hands = -1.5 } = {}) {
+function person({ dx = 0, dy = 0, tilt = 0, hands = -1.5, eh = 0.1 } = {}) {
   const lm = Array.from({ length: 33 }, () => ({ x: 0.5, y: 0.5, visibility: 0.99 }));
   const cx = 0.5 + dx, cy = 0.4 + dy, w = 0.2;
   lm[11] = { x: cx - w / 2, y: cy - tilt * w / 2, visibility: 0.99 };
   lm[12] = { x: cx + w / 2, y: cy + tilt * w / 2, visibility: 0.99 };
-  lm[13] = { x: cx - w / 2, y: cy + 0.1, visibility: 0.99 }; lm[14] = { x: cx + w / 2, y: cy + 0.1, visibility: 0.99 };
+  lm[13] = { x: cx - w / 2, y: cy + eh, visibility: 0.99 }; lm[14] = { x: cx + w / 2, y: cy + eh, visibility: 0.99 };
+  lm[0] = { x: cx, y: cy - 0.15, visibility: 0.99 };
   const hy = cy - hands * w; // hands>0 = por encima del hombro
   lm[15] = { x: cx - w / 2, y: hy, visibility: 0.99 }; lm[16] = { x: cx + w / 2, y: hy, visibility: 0.99 };
   return lm;
@@ -44,6 +45,25 @@ ok('final combinado completo = 1', run('final', combo).p === 1);
 ok('final con solo brazos ≈ 1/3 (no completa)', Math.abs(run('final', rep(person({ hands: 1.4 }), 40)).p - 1 / 3) < 0.01);
 ok('final: el orden importa (hombros primero no avanza)', run('final', Array.from({ length: 80 }, (_, i) => person({ tilt: 0.25 * Math.sin(i / 3) }))).p === 0);
 
+// --- Pasos nuevos (fuentes en la entrega): pito, suelo, gallina, hormigas ---
+const touches = Array.from({ length: 90 }, (_, i) => person({ hands: i % 30 < 12 ? 0.6 : -1.5 }));
+ok('pito: llevar la mano a la boca 3 veces = 1', run('pito', touches).p === 1);
+ok('pito: quieto NO puntúa', run('pito', rep(person(), 150)).p === 0);
+ok('pito: una sola vez no completa', run('pito', [...rep(person({ hands: 0.6 }), 20), ...rep(person(), 100)]).p < 1);
+const crouch = [...rep(person(), 10), ...Array.from({ length: 20 }, (_, i) => person({ dy: 0.14 * i / 19 })), ...Array.from({ length: 20 }, (_, i) => person({ dy: 0.14 * (1 - i / 19) })), ...rep(person(), 10)];
+ok('suelo: agacharse y volver a subir = 1', run('suelo', crouch).p === 1);
+ok('suelo: agacharse sin volver a subir = parcial (0.5)', run('suelo', [...rep(person(), 10), ...rep(person({ dy: 0.14 }), 40)]).p === 0.5);
+ok('suelo: quieto NO puntúa', run('suelo', rep(person(), 150)).p === 0);
+ok('gallina: subir y bajar los codos = 1', run('gallina', Array.from({ length: 90 }, (_, i) => person({ eh: 0.1 - 0.16 * (Math.sin(i / 2.5) > 0 ? 1 : 0) }))).p === 1);
+ok('gallina: quieto NO puntúa', run('gallina', rep(person(), 150)).p === 0);
+ok('gallina: rebotar el cuerpo entero (codos fijos al torso) NO cuenta', run('gallina', Array.from({ length: 120 }, (_, i) => person({ dy: -0.07 * Math.max(0, Math.sin(i / 3.5)) }))).p === 0);
+ok('hormigas: temblor rápido del cuerpo = 1', run('hormigas', Array.from({ length: 90 }, (_, i) => person({ dx: 0.04 * (i % 2 ? 1 : -1) }))).p === 1);
+ok('hormigas: quieto NO puntúa', run('hormigas', rep(person(), 150)).p === 0);
+ok('hormigas: balanceo lento de lados NO puntúa', run('hormigas', Array.from({ length: 150 }, (_, i) => person({ dx: 0.08 * Math.sin(i / 25) }))).p < 1);
+ok('reto: 9 pasos, el final es el último y los ids son únicos', STEPS.length === 9 && STEPS.at(-1).id === 'final' && new Set(STEPS.map(x => x.id)).size === 9);
+const musica9 = Array.from({ length: 10 }, (_, c) => levelForCount(c, STEPS.length));
+ok('música con 9 pasos: sube de forma monótona de 10 % a 75 %', musica9[0] === 0.1 && Math.abs(musica9[9] - 0.75) < 1e-9 && musica9.every((v, i) => !i || v > musica9[i - 1]));
+
 // --- Puntuación ---
 const s = new Score(5);
 ok('correcto +100', s.finishStep('brazos', 1).pts === 100);
@@ -66,7 +86,7 @@ ok('flujo completo de estados', seen.join() === 'preparing>calibrating,calibrati
 ok('config: umbral configurable', CONFIG.minValidatedSteps === 3);
 
 // --- Música progresiva (lógica, con audio simulado) ---
-const M = CONFIG.music, N = STEPS.length;
+const M = CONFIG.music, N = 5; // la lógica musical se prueba con 5 pasos (niveles 20/35/50/65/75 %); con otro nº de pasos interpola
 ok('música: empieza al 10 %', levelForCount(0, N) === 0.10);
 ok('música: 1.º…5.º paso correcto = 20/35/50/65/75 %', [1, 2, 3, 4, 5].map(c => levelForCount(c, N)).join() === '0.2,0.35,0.5,0.65,0.75');
 ok('música: nunca llega al 100 % (tope duro)', levelForCount(99, N) <= M.hardMax && M.hardMax < 1 && effectiveGain(5, 5) <= M.hardMax);

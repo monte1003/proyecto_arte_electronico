@@ -14,7 +14,7 @@ Si falta la carpeta `vendor/`, ejecuta antes `npm install` (copia los modelos de
 Otros comandos: `npm test` (lógica de evaluación y puntuación), `npm run build` (genera `dist/`).
 
 ## Música y cierre reflexivo
-La canción suena al pulsar «Empezar reto» (nunca antes), en bucle, y el volumen sube únicamente cuando se valida un paso nuevo con MediaPipe. Al desbloquear la máscara, la música baja poco a poco, el fondo se oscurece y aparece la pregunta final sobre identidad y uniformidad, con los botones «Volver a bailar» y «Descubrir mi identidad». Si la canción no carga, el juego sigue con el ritmo sintético.
+La canción suena al pulsar «Empezar reto» (nunca antes), en bucle, y el volumen sube únicamente cuando se valida un paso nuevo con MediaPipe. Al desbloquear la máscara, la música baja poco a poco, el fondo se oscurece y aparece el mensaje final sobre lo que significa ponerse la máscara (sátira, libertad, anonimato, resistencia y orgullo caribeño), con los botones «Volver a bailar» y «Descubrir mi identidad». Si la canción no carga, el juego sigue con el ritmo sintético.
 
 ## Estructura
 - `index.html`, `css/styles.css` — contenido del Word y diseño carnavalero
