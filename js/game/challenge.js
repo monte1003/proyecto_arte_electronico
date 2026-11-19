@@ -42,13 +42,30 @@ export class Challenge {
     this.music.onLevel = (lvl, gain) => this.paintMusic(lvl, gain);
     this.music.onStatus = (st, msg) => this.onMusicStatus(st, msg);
     this.music.onFail = () => { if (this.state.is('playing')) this.audio.start(CONFIG.bpm, Math.max(0, Math.floor(this.beat))); };
-    this.buildChips(); this.bind(); this.paintMusic(this.music.level, 0);
+    this.buildChips(); this.bind(); this.paintMusic(this.music.level, 0); this.autoplayMusic();
     this.state.on((s, p) => this.onState(s, p)); this.onState('preparing', null);
     const sup = cameraSupport();
     if (!sup.ok) { $('supportMsg').hidden = false; $('supportMsg').textContent = sup.message; $('btnCam').disabled = true; }
     this.resizeTut(); addEventListener('resize', () => this.resizeTut());
     this.tick(performance.now());
     if (TEST) window.__reto = { pose: lm => this.onPose(lm, performance.now(), true), face: lm => this.onFace(lm, true), challenge: this, score: this.score };
+  }
+
+  /** La música intenta sonar al abrir la página (10 %). Si el navegador bloquea el audio, suena en el primer clic, toque o tecla. */
+  autoplayMusic() {
+    const evs = ['pointerdown', 'keydown', 'touchstart'];
+    const kick = async quiet => {
+      if (!this.state.is('preparing') || this.music.status === 'playing') return;
+      this.quiet = quiet; await this.music.start(); this.quiet = false;
+    };
+    const onGesture = () => { evs.forEach(e => removeEventListener(e, onGesture, true)); this.music.prime(); kick(false); };
+    evs.forEach(e => addEventListener(e, onGesture, true)); // el primer gesto desbloquea el audio si el navegador lo bloqueó
+    kick(true);
+    document.addEventListener('visibilitychange', () => { // pestaña oculta: la música ambiental se pausa
+      if (!this.state.is('preparing')) return;
+      if (document.hidden && this.music.status === 'playing') { this.music.pause(); this.ambientPaused = true; }
+      else if (!document.hidden && this.ambientPaused) { this.ambientPaused = false; this.music.resume(); }
+    });
   }
 
   bind() {
@@ -137,6 +154,7 @@ export class Challenge {
     $('cam').classList.remove('live'); $('btnBegin').hidden = true; $('btnCam').hidden = false; $('btnCam').disabled = false; $('btnCam').textContent = 'Activar cámara';
     if (!this.state.is('preparing')) this.state.go('preparing'); else this.onState('preparing');
     this.camStatus(msg || '');
+    this.music.start(); // la música de fondo vuelve al 10 % al regresar a la preparación
   }
   releaseAll() {
     clearTimeout(this.outTimer); this.audio.stop(); this.stopReflection(); this.music.dispose();
@@ -310,7 +328,7 @@ export class Challenge {
     const el = $('musicInfo'); if (!el) return;
     el.textContent = this.music.status === 'error' ? '🎵 Sin la canción: suena el ritmo de respaldo.' : `🎵 Música al ${Math.round(level * 100)} % · sube con cada paso correcto`;
   }
-  onMusicStatus(st, msg) { const el = $('musicInfo'); if (st === 'error' && el) el.textContent = '🎵 ' + (msg || 'La canción no está disponible.') + ' Suena el ritmo de respaldo.'; }
+  onMusicStatus(st, msg) { const el = $('musicInfo'); if (st === 'error' && el && !this.quiet) el.textContent = '🎵 ' + (msg || 'La canción no está disponible.') + ' Suena el ritmo de respaldo.'; }
   onFace(lm, fromHook = false) {
     if (TEST && !fromHook) return; if (!this.state.is('finished')) return;
     this.faceLm = lm; this.faceAt = performance.now();
